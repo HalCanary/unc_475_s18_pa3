@@ -21,6 +21,8 @@ const GDrawRec gDrawRecs[] = {
     { draw_poly_rotate, 300, 300,   "color_clock",  3 },
     { draw_bitmaps_hole,300, 300,   "bitmap_hole",  3 },
     { draw_clock_bm,    480, 480,   "spock_clock",  3 },
+    { draw_clock_bm,    480, 480,   "spock_clock",  3 },
+    { draw_bm_blendmodes,  450, 340,   "blendmodes2",   3 },
 
     { nullptr, 0, 0, nullptr },
 };

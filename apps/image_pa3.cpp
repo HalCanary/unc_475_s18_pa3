@@ -164,3 +164,63 @@ static void draw_bitmaps_hole(GCanvas* canvas) {
     draw_bitmap(canvas, r, bm1, GBlendMode::kDstIn);
 }
 
+static void draw_mode_sample2(GCanvas* canvas, const GRect& bounds, GBlendMode mode) {
+    outer_frame(canvas, bounds);
+
+    GPaint paint;
+    GPoint pts[4];
+
+    GPixel dstp[5] = {
+        GPixel_PackARGB(0, 0, 0, 0),
+        GPixel_PackARGB(0x40, 0x40, 0, 0),
+        GPixel_PackARGB(0x80, 0x80, 0, 0),
+        GPixel_PackARGB(0xC0, 0xC0, 0, 0),
+        GPixel_PackARGB(0xFF, 0xFF, 0, 0),
+    };
+    GBitmap dstbm(1, 5, 1*4, dstp, false);
+    auto dstsh = GCreateBitmapShader(dstbm, GMatrix::MakeScale(1.0f/bounds.width(),
+                                                               5.0f/bounds.height()));
+
+    GPixel srcp[5] = {
+        GPixel_PackARGB(0, 0, 0, 0),
+        GPixel_PackARGB(0x40, 0, 0, 0x40),
+        GPixel_PackARGB(0x80, 0, 0, 0x80),
+        GPixel_PackARGB(0xC0, 0, 0, 0xC0),
+        GPixel_PackARGB(0xFF, 0, 0, 0xFF),
+    };
+    GBitmap srcbm(5, 1, 5*4, srcp, false);
+    auto srcsh = GCreateBitmapShader(srcbm, GMatrix::MakeScale(5.0f/bounds.width(),
+                                                               1.0f/bounds.height()));
+
+    paint.setBlendMode(GBlendMode::kSrc);
+    paint.setShader(dstsh.get());
+    canvas->drawConvexPolygon(rect_pts(bounds, pts), 4, paint);
+
+    paint.setBlendMode(mode);
+    paint.setShader(srcsh.get());
+    canvas->drawRect(bounds, paint);
+}
+
+static void draw_bm_blendmodes(GCanvas* canvas) {
+    canvas->clear({1,1,1,1});
+    const GRect r = GRect::MakeWH(100, 100);
+
+    const float W = 100;
+    const float H = 100;
+    const float margin = 10;
+    float x = margin;
+    float y = margin;
+    for (int i = 0; i < 12; ++i) {
+        GBlendMode mode = static_cast<GBlendMode>((i + 1) % 12);
+        canvas->save();
+        canvas->translate(x, y);
+        draw_mode_sample2(canvas, r, mode);
+        canvas->restore();
+        if (i % 4 == 3) {
+            y += H + margin;
+            x = margin;
+        } else {
+            x += W + margin;
+        }
+    }
+}
