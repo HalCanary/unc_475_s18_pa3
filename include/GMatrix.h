@@ -12,16 +12,9 @@
 
 class GMatrix {
 public:
-    GMatrix() { this->setIdentity(); }
-    GMatrix(float a, float b, float c, float d, float e, float f) {
-        fMat[0] = a;    fMat[1] = b;    fMat[2] = c;
-        fMat[3] = d;    fMat[4] = e;    fMat[5] = f;
-    }
+    GMatrix() : fMat{1, 0, 0, 0, 1, 0} {}
 
-    void set6(float a, float b, float c, float d, float e, float f) {
-        fMat[0] = a;    fMat[1] = b;    fMat[2] = c;
-        fMat[3] = d;    fMat[4] = e;    fMat[5] = f;
-    }
+    GMatrix(float a, float b, float c, float d, float e, float f) : fMat{a, b, c, d, e, f} {}
 
     enum {
         SX, KX, TX,
@@ -40,46 +33,37 @@ public:
         }
         return true;
     }
+    bool operator!=(const GMatrix& m) { return !(*this == m); }
 
-    // These 7 methods must be implemented by the student.
+    static GMatrix MakeTranslate(float tx, float ty) { return GMatrix(1, 0, tx, 0, 1, ty); }
 
+    static GMatrix MakeScale(float sx, float sy) { return GMatrix(sx, 0, 0, 0, sy, 0); }
+
+    static GMatrix MakeScale(float scale) { return GMatrix::MakeScale(scale, scale); }
+
+    // These 4 methods must be implemented by the student.
     /**
-     *  Set this matrix to identity.
-     */
-    void setIdentity();
-
-    /**
-     *  Set this matrix to translate by the specified amounts.
-     */
-    void setTranslate(float tx, float ty);
-
-    /**
-     *  Set this matrix to scale by the specified amounts.
-     */
-    void setScale(float sx, float sy);
-
-    /**
-     *  Set this matrix to rotate by the specified radians.
+     *  Return a matrix to rotate by the specified radians.
      *
      *  Note: since positive-Y goes down, a small angle of rotation will increase Y.
      */
-    void setRotate(float radians);
+    static GMatrix MakeRotate(float radians);
 
     /**
-     *  Set this matrix to the concatenation of the two specified matrices, such that the resulting
+     *  Return the concatenation of the two specified matrices, such that the resulting
      *  matrix, when applied to points will have the same effect as first applying the primo matrix
      *  to the points, and then applying the secundo matrix to the resulting points.
      *
      *  Pts' = Secundo * Primo * Pts
      */
-    void setConcat(const GMatrix& secundo, const GMatrix& primo);
+    static GMatrix MakeConcat(const GMatrix& secundo, const GMatrix& primo);
 
     /*
      *  If this matrix is invertible, return true and (if not null) set the inverse parameter.
      *  If this matrix is not invertible, return false and ignore the inverse parameter.
      */
     bool invert(GMatrix* inverse) const;
-    
+
     /**
      *  Transform the set of points in src, storing the resulting points in dst, by applying this
      *  matrix. It is the caller's responsibility to allocate dst to be at least as large as src.
@@ -93,82 +77,66 @@ public:
     void mapPoints(GPoint dst[], const GPoint src[], int count) const;
 
     ///////////////////////////////////////////////////////////////////////////////////////////////
-    // These helper methods are implemented in terms of the previous 7 methods.
+    // These helper methods are implemented in terms of the previous methods.
+
+    GMatrix& set6(float a, float b, float c, float d, float e, float f) {
+        return *this = GMatrix{a, b, c, d, e, f};
+    }
+
+    GMatrix& setIdentity() {
+        return *this = GMatrix();
+    }
+
+    GMatrix& setTranslate(float tx, float ty) {
+       return *this = GMatrix::MakeTranslate(tx, ty);
+    }
+
+    GMatrix& setScale(float sx, float sy) {
+       return *this = GMatrix::MakeScale(sx, sy);
+    }
+
+    GMatrix& setRotate(float radians) {
+        return *this = GMatrix::MakeRotate(radians);
+    }
+
+    GMatrix& setConcat(const GMatrix& secundo, const GMatrix& primo) {
+        return *this = GMatrix::MakeConcat(secundo, primo);
+    }
 
     GMatrix& preConcat(const GMatrix& primo) {
-        this->setConcat(*this, primo);
-        return *this;
+        return *this = GMatrix::MakeConcat(*this, primo);
     }
 
     GMatrix& preTranslate(float x, float y) {
-        GMatrix trans;
-        trans.setTranslate(x, y);
-        return this->preConcat(trans);
+        return this->preConcat(GMatrix::MakeTranslate(x, y));
     }
 
     GMatrix& preScale(float sx, float sy) {
-        GMatrix scale;
-        scale.setScale(sx, sy);
-        return this->preConcat(scale);
+        return this->preConcat(GMatrix::MakeScale(sx, sy));
     }
 
     GMatrix& preRotate(float radians) {
-        GMatrix rotate;
-        rotate.setRotate(radians);
-        return this->preConcat(rotate);
+        return this->preConcat(GMatrix::MakeRotate(radians));
     }
 
     GMatrix& postConcat(const GMatrix& secundo) {
-        this->setConcat(secundo, *this);
-        return *this;
-    }
-    
-    GMatrix& postTranslate(float x, float y) {
-        GMatrix trans;
-        trans.setTranslate(x, y);
-        return this->postConcat(trans);
-    }
-    
-    GMatrix& postScale(float sx, float sy) {
-        GMatrix scale;
-        scale.setScale(sx, sy);
-        return this->postConcat(scale);
-    }
-    
-    GMatrix& postRotate(float radians) {
-        GMatrix rotate;
-        rotate.setRotate(radians);
-        return this->postConcat(rotate);
+        return *this = GMatrix::MakeConcat(secundo, *this);
     }
 
-    static GMatrix MakeTranslate(float tx, float ty) {
-        GMatrix m;
-        m.setTranslate(tx, ty);
-        return m;
+    GMatrix& postTranslate(float x, float y) {
+        return this->postConcat(GMatrix::MakeTranslate(x, y));
     }
-    
-    static GMatrix MakeScale(float scale) {
-        GMatrix m;
-        m.setScale(scale, scale);
-        return m;
+
+    GMatrix& postScale(float sx, float sy) {
+        return this->postConcat(GMatrix::MakeScale(sx, sy));
     }
-    
-    static GMatrix MakeScale(float sx, float sy) {
-        GMatrix m;
-        m.setScale(sx, sy);
-        return m;
+
+    GMatrix& postRotate(float radians) {
+        return this->postConcat(GMatrix::MakeRotate(radians));
     }
-    
-    static GMatrix MakeRotate(float radians) {
-        GMatrix m;
-        m.setRotate(radians);
-        return m;
-    }
-    
+
     GPoint mapXY(float x, float y) const {
-        GPoint pts[1]{ x, y };
-        this->mapPoints(pts, pts, 1);
-        return pts[0];
+        return this->mapPt(GPoint{x, y});
     }
 
     GPoint mapPt(GPoint pt) const {
